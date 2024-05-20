@@ -15,8 +15,8 @@ import com.example.roamright.ui.theme.RoamRightTheme
 
 @Composable
 fun LoginScreen(onLoginSuccess: (String) -> Unit) {
-    var username by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
+    val username = remember { mutableStateOf("") }
+    val password = remember { mutableStateOf("") }
 
     Column(
         modifier = Modifier
@@ -25,50 +25,23 @@ fun LoginScreen(onLoginSuccess: (String) -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text("Login", style = MaterialTheme.typography.headlineMedium)
+        Text("RoamRight", style = MaterialTheme.typography.headlineLarge)
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        BasicTextField(
-            value = username,
-            onValueChange = { username = it },
-            decorationBox = { innerTextField ->
-                Box(
-                    Modifier
-                        .padding(16.dp)
-                        .fillMaxWidth()
-                        .height(36.dp)
-                        .background(Color.LightGray)
-                ) {
-                    if (username.isEmpty()) {
-                        Text("Username", color = Color.Gray)
-                    }
-                    innerTextField()
-                }
-            },
+        TextField(
+            value = username.value,
+            onValueChange = {username.value = it},
+            label = {Text("Username")},
             modifier = Modifier.fillMaxWidth()
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        BasicTextField(
-            value = password,
-            onValueChange = { password = it },
-            visualTransformation = PasswordVisualTransformation(),
-            decorationBox = { innerTextField ->
-                Box(
-                    Modifier
-                        .padding(16.dp)
-                        .fillMaxWidth()
-                        .height(36.dp)
-                        .background(Color.LightGray)
-                ) {
-                    if (password.isEmpty()) {
-                        Text("Password", color = Color.Gray)
-                    }
-                    innerTextField()
-                }
-            },
+        TextField(
+            value = password.value,
+            onValueChange = {password.value = it},
+            label = {Text("Password")},
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -76,31 +49,13 @@ fun LoginScreen(onLoginSuccess: (String) -> Unit) {
 
         Button(
             onClick = {
-                if (username.isNotEmpty() && password.isNotEmpty()) {
-                    onLoginSuccess(username)
+                if (username.value.isNotEmpty()) {
+                    onLoginSuccess(username.value)
                 }
             },
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Login")
         }
-    }
-}
-
-@Composable
-fun WelcomeScreen(username: String) {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(text = "Welcome, $username!", style = MaterialTheme.typography.headlineMedium)
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun LoginScreenPreview() {
-    RoamRightTheme {
-        LoginScreen(onLoginSuccess = {})
     }
 }

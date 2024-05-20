@@ -31,20 +31,12 @@ fun MainScreen() {
         color = MaterialTheme.colorScheme.background
     ) {
         if (loggedIn) {
-            WelcomeScreen(username)
+            ProfilePage(username)
         } else {
             LoginScreen(onLoginSuccess = { enteredUsername ->
                 username = enteredUsername
                 loggedIn = true
             })
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun DefaultPreview() {
-    RoamRightTheme {
-        MainScreen()
     }
 }
