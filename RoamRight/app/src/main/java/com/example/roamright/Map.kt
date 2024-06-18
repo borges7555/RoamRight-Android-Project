@@ -1,16 +1,13 @@
 package com.example.roamright
 
 import PhotoDetail
-import ProfilePage
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.Intent
 import android.graphics.BitmapFactory
 import android.location.Location
 import android.net.Uri
 import android.os.Environment
-import android.provider.MediaStore
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -31,6 +28,9 @@ import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.storage.FirebaseStorage
 import com.google.maps.android.compose.*
 import kotlinx.coroutines.launch
 import java.io.File
@@ -51,6 +51,8 @@ fun MapPage(username: String) {
     var pictureLocation by remember { mutableStateOf<LatLng?>(null) }
     var pictureFile by remember { mutableStateOf<File?>(null) }
     var showDialog by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    var snackbarMessage by remember { mutableStateOf("") }
     val mapProperties by remember { mutableStateOf(MapProperties(isMyLocationEnabled = true)) }
     val cameraPositionState = rememberCameraPositionState()
 
@@ -61,9 +63,20 @@ fun MapPage(username: String) {
             userLocation?.let { location ->
                 pictureLocation = LatLng(location.latitude, location.longitude)
                 pictureFile?.let { file ->
-                    photoDetails.add(PhotoDetail(file.absolutePath, pictureLocation!!, System.currentTimeMillis()))
+                    uploadPhoto(file, username) { url ->
+                        savePhotoDetailToFirestore(username, url, pictureLocation!!)
+                        photoDetails.add(PhotoDetail(url, pictureLocation!!, System.currentTimeMillis()))
+                        snackbarMessage = "Image uploaded successfully!"
+                    }
                 }
             }
+        }
+    }
+
+    LaunchedEffect(snackbarMessage) {
+        if (snackbarMessage.isNotEmpty()) {
+            snackbarHostState.showSnackbar(snackbarMessage)
+            snackbarMessage = ""
         }
     }
 
@@ -171,4 +184,41 @@ fun MapPage(username: String) {
             }
         }
     }
+
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { padding ->
+        Box(modifier = Modifier.padding(padding)) {
+            // Your UI content goes here
+        }
+    }
+}
+
+private fun uploadPhoto(file: File, username: String, onComplete: (String) -> Unit) {
+    val storage = FirebaseStorage.getInstance()
+    val storageRef = storage.reference
+    val userPhotosRef = storageRef.child("photos/$username/${file.name}")
+    val uri = Uri.fromFile(file)
+
+    userPhotosRef.putFile(uri)
+        .addOnSuccessListener {
+            userPhotosRef.downloadUrl.addOnSuccessListener { uri ->
+                onComplete(uri.toString())
+            }
+        }
+        .addOnFailureListener { exception ->
+            // Handle unsuccessful uploads
+        }
+}
+
+private fun savePhotoDetailToFirestore(username: String, url: String, location: LatLng) {
+    val db = FirebaseFirestore.getInstance()
+    val photoDetail = hashMapOf(
+        "username" to username,
+        "url" to url,
+        "latitude" to location.latitude,
+        "longitude" to location.longitude,
+        "timestamp" to System.currentTimeMillis()
+    )
+    db.collection("photos").add(photoDetail)
 }

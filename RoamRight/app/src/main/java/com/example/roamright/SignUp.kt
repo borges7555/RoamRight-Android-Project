@@ -13,7 +13,7 @@ import androidx.compose.ui.unit.dp
 import com.google.firebase.auth.FirebaseAuth
 
 @Composable
-fun SignUpScreen(onSignUpSuccess: (String) -> Unit, onLoginClick: () -> Unit) {
+fun SignUpScreen(onSignUpSuccess: (String) -> Unit, onLoginClick: () -> Unit, onError: (String) -> Unit) {
     val username = remember { mutableStateOf("") }
     val password = remember { mutableStateOf("") }
     val auth = FirebaseAuth.getInstance()
@@ -73,11 +73,13 @@ fun SignUpScreen(onSignUpSuccess: (String) -> Unit, onLoginClick: () -> Unit) {
                                     if (task.isSuccessful) {
                                         onSignUpSuccess(username.value)
                                     } else {
+                                        onError(task.exception?.message ?: "Sign up failed")
                                         snackbarMessage = task.exception?.message ?: "Sign up failed"
                                         showSnackbar = true
                                     }
                                 }
                         } else {
+                            onError("Please enter both username and password")
                             snackbarMessage = "Please enter both username and password"
                             showSnackbar = true
                         }

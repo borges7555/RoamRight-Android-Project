@@ -46,6 +46,9 @@ fun MainScreen() {
                     },
                     onSignUpClick = {
                         showLoginScreen = false
+                    },
+                    onError = { message ->
+                        errorMessage = message
                     }
                 )
             } else {
@@ -56,10 +59,14 @@ fun MainScreen() {
                     },
                     onLoginClick = {
                         showLoginScreen = true
+                    },
+                    onError = { message ->
+                        errorMessage = message
                     }
                 )
             }
         }
+
         if (errorMessage.isNotEmpty()) {
             Snackbar(
                 action = {
