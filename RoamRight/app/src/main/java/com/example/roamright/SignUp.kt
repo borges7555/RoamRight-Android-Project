@@ -13,7 +13,7 @@ import androidx.compose.ui.unit.dp
 import com.google.firebase.auth.FirebaseAuth
 
 @Composable
-fun LoginScreen(onLoginSuccess: (String) -> Unit, onSignUpClick: () -> Unit) {
+fun SignUpScreen(onSignUpSuccess: (String) -> Unit, onLoginClick: () -> Unit) {
     val username = remember { mutableStateOf("") }
     val password = remember { mutableStateOf("") }
     val auth = FirebaseAuth.getInstance()
@@ -68,12 +68,12 @@ fun LoginScreen(onLoginSuccess: (String) -> Unit, onSignUpClick: () -> Unit) {
                 Button(
                     onClick = {
                         if (username.value.isNotEmpty() && password.value.isNotEmpty()) {
-                            auth.signInWithEmailAndPassword(username.value, password.value)
+                            auth.createUserWithEmailAndPassword(username.value, password.value)
                                 .addOnCompleteListener { task ->
                                     if (task.isSuccessful) {
-                                        onLoginSuccess(username.value)
+                                        onSignUpSuccess(username.value)
                                     } else {
-                                        snackbarMessage = task.exception?.message ?: "Login failed"
+                                        snackbarMessage = task.exception?.message ?: "Sign up failed"
                                         showSnackbar = true
                                     }
                                 }
@@ -84,14 +84,14 @@ fun LoginScreen(onLoginSuccess: (String) -> Unit, onSignUpClick: () -> Unit) {
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Login")
+                    Text("Sign Up")
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
-                    text = "Don't have an account? Sign Up",
-                    modifier = Modifier.clickable { onSignUpClick() },
+                    text = "Already have an account? Login",
+                    modifier = Modifier.clickable { onLoginClick() },
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Bold,
                     textDecoration = TextDecoration.Underline

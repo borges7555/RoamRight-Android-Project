@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "637531086879",
+    "project_id": "roamright-17076",
+    "storage_bucket": "roamright-17076.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:637531086879:android:5d19325a6b318903f5b52a",
+        "android_client_info": {
+          "package_name": "com.example.roamright"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDnynIzGZc7L98zbKJNGHjAjOx5WCqYNwE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
