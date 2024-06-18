@@ -11,11 +11,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.roamright.ui.theme.RoamRightTheme
+import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        FirebaseApp.initializeApp(this) // Ensure Firebase is initialized
         setContent {
             RoamRightTheme {
                 MainScreen()
@@ -36,7 +38,11 @@ fun MainScreen() {
         color = MaterialTheme.colorScheme.background
     ) {
         if (loggedIn) {
-            MapPage(username)
+            MapPage(username = username, onLogout = {
+                loggedIn = false
+                username = ""
+                showLoginScreen = true
+            })
         } else {
             if (showLoginScreen) {
                 LoginScreen(
