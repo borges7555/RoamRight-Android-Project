@@ -36,7 +36,7 @@ fun MainScreen() {
         color = MaterialTheme.colorScheme.background
     ) {
         if (loggedIn) {
-            ProfilePage(username)
+            MapPage(username)
         } else {
             if (showLoginScreen) {
                 LoginScreen(
