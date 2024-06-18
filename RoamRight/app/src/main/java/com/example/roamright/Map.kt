@@ -171,6 +171,4 @@ fun MapPage(username: String) {
             }
         }
     }
-
-    ProfilePage(username = username, photoDetails = photoDetails)
 }
