@@ -45,14 +45,11 @@ fun MapPage(username: String) {
     val coroutineScope = rememberCoroutineScope()
     val locationPermissionState = rememberPermissionState(permission = Manifest.permission.ACCESS_FINE_LOCATION)
     val cameraPermissionState = rememberPermissionState(permission = Manifest.permission.CAMERA)
-
     var userLocation by remember { mutableStateOf<Location?>(null) }
     var clickedLocation by remember { mutableStateOf<LatLng?>(null) }
     var pictureLocation by remember { mutableStateOf<LatLng?>(null) }
     var pictureFile by remember { mutableStateOf<File?>(null) }
     var showDialog by remember { mutableStateOf(false) }
-    val snackbarHostState = remember { SnackbarHostState() }
-    var snackbarMessage by remember { mutableStateOf("") }
     val mapProperties by remember { mutableStateOf(MapProperties(isMyLocationEnabled = true)) }
     val cameraPositionState = rememberCameraPositionState()
 
@@ -66,17 +63,9 @@ fun MapPage(username: String) {
                     uploadPhoto(file, username) { url ->
                         savePhotoDetailToFirestore(username, url, pictureLocation!!)
                         photoDetails.add(PhotoDetail(url, pictureLocation!!, System.currentTimeMillis()))
-                        snackbarMessage = "Image uploaded successfully!"
                     }
                 }
             }
-        }
-    }
-
-    LaunchedEffect(snackbarMessage) {
-        if (snackbarMessage.isNotEmpty()) {
-            snackbarHostState.showSnackbar(snackbarMessage)
-            snackbarMessage = ""
         }
     }
 
@@ -184,14 +173,6 @@ fun MapPage(username: String) {
             }
         }
     }
-
-    Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) { padding ->
-        Box(modifier = Modifier.padding(padding)) {
-            // Your UI content goes here
-        }
-    }
 }
 
 private fun uploadPhoto(file: File, username: String, onComplete: (String) -> Unit) {
@@ -199,14 +180,13 @@ private fun uploadPhoto(file: File, username: String, onComplete: (String) -> Un
     val storageRef = storage.reference
     val userPhotosRef = storageRef.child("photos/$username/${file.name}")
     val uri = Uri.fromFile(file)
-
     userPhotosRef.putFile(uri)
         .addOnSuccessListener {
             userPhotosRef.downloadUrl.addOnSuccessListener { uri ->
                 onComplete(uri.toString())
             }
         }
-        .addOnFailureListener { exception ->
+        .addOnFailureListener {
             // Handle unsuccessful uploads
         }
 }
