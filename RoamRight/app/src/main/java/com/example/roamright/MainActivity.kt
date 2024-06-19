@@ -53,7 +53,6 @@ fun MainScreen() {
                 composable("map") {
                     MapPage(username = username, navController = navController)
                 }
-                //composable("analytics") { AnalyticsPage(navController) }
                 composable("analytics") {
                     AnalyticsPage(navController = navController)
                 }

@@ -66,7 +66,6 @@ dependencies {
     implementation(libs.firebase.database)
     implementation(libs.androidx.navigation.runtime.ktx)
     implementation(libs.androidx.navigation.compose)
-    implementation(libs.vision.internal.vkp)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -91,6 +90,9 @@ dependencies {
     implementation("com.google.firebase:firebase-analytics")
     implementation ("com.google.firebase:firebase-storage-ktx:20.0.0")
     implementation ("com.google.firebase:firebase-firestore-ktx:25.0.0")
-    implementation ("androidx.compose.material:material-icons-extended:1.0.5")
+    implementation ("com.google.firebase:firebase-auth-ktx:23.0.0")
+    implementation (platform("com.google.firebase:firebase-bom:33.1.0"))
+    implementation ("com.google.firebase:firebase-analytics")
+    implementation ("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.2")
 
 }
