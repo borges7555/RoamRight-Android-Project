@@ -1,4 +1,7 @@
-import android.graphics.BitmapFactory
+package com.example.roamright
+
+import android.util.Log
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -10,26 +13,29 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.example.roamright.BottomNavigationBar
-import com.example.roamright.PhotoDetail
-import com.google.android.gms.maps.model.LatLng
-import com.google.firebase.firestore.FirebaseFirestore
+import coil.compose.rememberAsyncImagePainter
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
-import java.text.SimpleDateFormat
-import java.util.*
 
 @Composable
 fun ProfilePage(username: String, onLogout: () -> Unit, navController: NavController) {
+    val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
     var personalInfo by remember { mutableStateOf("Informação inserida pelo user sobre si mesmo") }
     val photoDetails = remember { mutableStateListOf<PhotoDetail>() }
 
     LaunchedEffect(Unit) {
-        photoDetails.addAll(fetchUserPhotos(username))
+        loadUserInfo(userId) { info ->
+            personalInfo = info
+        }
+        loadImagesFromFirebase(userId) { details ->
+            photoDetails.addAll(details)
+        }
     }
 
     Scaffold(
@@ -43,14 +49,14 @@ fun ProfilePage(username: String, onLogout: () -> Unit, navController: NavContro
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState())
         ) {
-            Header()
+            HeaderP()
             Spacer(modifier = Modifier.height(16.dp))
 
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp)
-                    .background(Color(0xFF9FA8DA), shape = CircleShape)
+                    .background(Color(0xFF9FA8DA))
                     .padding(16.dp)
             ) {
                 Column {
@@ -69,6 +75,10 @@ fun ProfilePage(username: String, onLogout: () -> Unit, navController: NavContro
                             .background(Color(0xFF9FA8DA))
                             .padding(8.dp)
                     )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Button(onClick = { saveUserInfo(userId, personalInfo) }) {
+                        Text(text = "Save", color = Color.White)
+                    }
                 }
             }
 
@@ -76,7 +86,7 @@ fun ProfilePage(username: String, onLogout: () -> Unit, navController: NavContro
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp)
-                    .background(Color(0xFF9FA8DA), shape = CircleShape)
+                    .background(Color(0xFF9FA8DA))
                     .padding(16.dp)
             ) {
                 Column {
@@ -88,7 +98,7 @@ fun ProfilePage(username: String, onLogout: () -> Unit, navController: NavContro
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     photoDetails.forEach { photoDetail ->
-                        VisitedPlaceItem(photoDetail = photoDetail)
+                        VisitedPlaceItem(photoDetail = photoDetail, onDelete = { deletePhoto(photoDetail, photoDetails) })
                         Spacer(modifier = Modifier.height(8.dp))
                     }
                 }
@@ -108,7 +118,7 @@ fun ProfilePage(username: String, onLogout: () -> Unit, navController: NavContro
 }
 
 @Composable
-fun Header() {
+fun HeaderP() {
     val sameColor = MaterialTheme.colorScheme.primary
     Box(
         contentAlignment = Alignment.Center,
@@ -128,45 +138,115 @@ fun Header() {
 }
 
 @Composable
-fun VisitedPlaceItem(photoDetail: PhotoDetail) {
-    //val bitmap = BitmapFactory.decodeFile(photoDetail.filePath)
+fun VisitedPlaceItem(photoDetail: PhotoDetail, onDelete: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color(0xFF9FA8DA), shape = CircleShape)
+            .background(Color(0xFF9FA8DA))
             .padding(8.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(
-            text = "Rua BlaBlaBla ${photoDetail.location.latitude}, ${photoDetail.location.longitude}",
-            color = Color.White,
+        Column(
             modifier = Modifier.weight(1f)
-        )
-        Button(onClick = { /* Show photo in a dialog */ }) {
-            Text(text = "Foto", color = Color.White)
+        ) {
+            Text(
+                text = "Location: ${photoDetail.location.latitude}, ${photoDetail.location.longitude}",
+                color = Color.White
+            )
+            Image(
+                painter = rememberAsyncImagePainter(photoDetail.imageUrl),
+                contentDescription = null,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp),
+                contentScale = ContentScale.Crop
+            )
+        }
+        Spacer(modifier = Modifier.width(8.dp))
+        Button(onClick = onDelete) {
+            Text(text = "Delete", color = Color.White)
         }
     }
 }
 
-suspend fun fetchUserPhotos(username: String): List<PhotoDetail> {
+fun deletePhoto(photoDetail: PhotoDetail, photoDetails: MutableList<PhotoDetail>) {
+    val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
     val db = FirebaseFirestore.getInstance()
-    val photosCollection = db.collection("photos")
-    val photoDetails = mutableListOf<PhotoDetail>()
+    db.collection("users").document(userId).collection("photos").whereEqualTo("timestamp", photoDetail.timestamp)
+        .get()
+        .addOnSuccessListener { snapshot ->
+            for (document in snapshot.documents) {
+                document.reference.delete()
+            }
+            photoDetails.remove(photoDetail)
 
-    try {
-        val snapshot = photosCollection.whereEqualTo("username", username).get().await()
-        for (document in snapshot.documents) {
-            val filePath = document.getString("filePath") ?: continue
-            val latitude = document.getDouble("latitude") ?: continue
-            val longitude = document.getDouble("longitude") ?: continue
-            val timestamp = document.getLong("timestamp") ?: continue
-
-            photoDetails.add(PhotoDetail(filePath, LatLng(latitude, longitude), timestamp))
+            // Update the total photos taken
+            db.collection("users").document(userId)
+                .get()
+                .addOnSuccessListener { document ->
+                    val userData = document.toObject(UserData::class.java)
+                    val updatedPhotosTaken = (userData?.photosTaken ?: 1) - 1
+                    db.collection("users").document(userId)
+                        .update("photosTaken", updatedPhotosTaken)
+                        .addOnSuccessListener {
+                            Log.d("ProfilePage", "Updated photosTaken count")
+                        }
+                        .addOnFailureListener { e ->
+                            Log.e("ProfilePage", "Failed to update photosTaken count: $e")
+                        }
+                }
+                .addOnFailureListener { e ->
+                    Log.e("ProfilePage", "Failed to get user data: $e")
+                }
         }
-    } catch (e: Exception) {
-        // Handle exception
-    }
+        .addOnFailureListener { e ->
+            Log.e("ProfilePage", "Failed to delete photo: $e")
+        }
+}
 
-    return photoDetails
+
+fun loadImagesFromFirebase(userId: String, onComplete: (List<PhotoDetail>) -> Unit) {
+    val db = FirebaseFirestore.getInstance()
+    db.collection("users").document(userId).collection("photos")
+        .get()
+        .addOnSuccessListener { result ->
+            val photoDetails = result.mapNotNull { document ->
+                document.toObject(PhotoDetail::class.java)
+            }
+            Log.d("ProfilePage", "Loaded image metadata: ${photoDetails.size} items")
+            onComplete(photoDetails)
+        }
+        .addOnFailureListener { e ->
+            Log.e("ProfilePage", "Failed to load image metadata from Firestore", e)
+            onComplete(emptyList())
+        }
+}
+
+fun saveUserInfo(userId: String, personalInfo: String) {
+    val db = FirebaseFirestore.getInstance()
+    db.collection("users").document(userId)
+        .update("personalInfo", personalInfo)
+        .addOnSuccessListener {
+            Log.d("ProfilePage", "User info saved successfully")
+        }
+        .addOnFailureListener { e ->
+            Log.e("ProfilePage", "Failed to save user info: $e")
+        }
+}
+
+fun loadUserInfo(userId: String, onComplete: (String) -> Unit) {
+    val db = FirebaseFirestore.getInstance()
+    db.collection("users").document(userId)
+        .get()
+        .addOnSuccessListener { document ->
+            if (document != null) {
+                val personalInfo = document.getString("personalInfo") ?: "Informação inserida pelo user sobre si mesmo"
+                onComplete(personalInfo)
+            }
+        }
+        .addOnFailureListener { e ->
+            Log.e("ProfilePage", "Failed to load user info: $e")
+            onComplete("Informação inserida pelo user sobre si mesmo")
+        }
 }

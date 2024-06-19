@@ -1,6 +1,5 @@
 package com.example.roamright
 
-import ProfilePage
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -10,6 +9,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -30,11 +30,12 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun MainScreen() {
+    val navController = rememberNavController()
+    val userViewModel: UserViewModel = viewModel()
     var loggedIn by remember { mutableStateOf(false) }
     var username by remember { mutableStateOf("") }
     var showLoginScreen by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf("") }
-    val navController = rememberNavController()
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -53,6 +54,9 @@ fun MainScreen() {
                     MapPage(username = username, navController = navController)
                 }
                 //composable("analytics") { AnalyticsPage(navController) }
+                composable("analytics") {
+                    AnalyticsPage(navController = navController)
+                }
             }
         } else {
             if (showLoginScreen) {

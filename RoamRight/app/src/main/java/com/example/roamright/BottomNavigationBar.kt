@@ -11,8 +11,8 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Map
-import androidx.compose.material.icons.filled.Assessment
+import androidx.compose.material.icons.filled.Place
+import androidx.compose.material.icons.filled.DateRange
 
 @Composable
 fun BottomNavigationBar(navController: NavController) {
@@ -42,6 +42,6 @@ fun BottomNavigationBar(navController: NavController) {
 
 sealed class NavigationItem(var route: String, var icon: ImageVector, var title: String) {
     object Profile : NavigationItem("profile", Icons.Default.Person, "Profile")
-    object Map : NavigationItem("map", Icons.Default.Map, "Map")
-    object Analytics : NavigationItem("analytics", Icons.Default.Assessment, "Analytics")
+    object Map : NavigationItem("map", Icons.Default.Place, "Map")
+    object Analytics : NavigationItem("analytics", Icons.Default.DateRange, "Analytics")
 }
