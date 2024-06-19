@@ -38,11 +38,13 @@ fun MainScreen() {
         color = MaterialTheme.colorScheme.background
     ) {
         if (loggedIn) {
-            MapPage(username = username, onLogout = {
+            /*MapPage(username = username, onLogout = {
                 loggedIn = false
                 username = ""
                 showLoginScreen = true
-            })
+            })*/
+            //ProfilePage(username = username, photoDetails = )
+            RankingPage(username = username)
         } else {
             if (showLoginScreen) {
                 LoginScreen(
