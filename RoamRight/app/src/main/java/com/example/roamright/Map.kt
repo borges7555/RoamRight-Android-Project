@@ -22,6 +22,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.core.content.FileProvider
+import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
@@ -84,7 +85,7 @@ fun getLocalImageMetadata(context: Context, userId: String): List<PhotoDetail> {
 @SuppressLint("MissingPermission")
 @OptIn(ExperimentalPermissionsApi::class, ExperimentalMaterial3Api::class)
 @Composable
-fun MapPage(username: String, onLogout: () -> Unit) {
+fun MapPage(username: String, navController: NavController) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val locationPermissionState = rememberPermissionState(permission = Manifest.permission.ACCESS_FINE_LOCATION)
@@ -151,101 +152,93 @@ fun MapPage(username: String, onLogout: () -> Unit) {
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        if (locationPermissionState.status.isGranted) {
-            GoogleMap(
-                modifier = Modifier.fillMaxSize(),
-                properties = mapProperties,
-                cameraPositionState = cameraPositionState,
-                onMapClick = { latLng ->
-                    clickedLocation = latLng
-                }
-            ) {
-
-                clickedLocation?.let {
-                    Marker(
-                        state = MarkerState(position = it),
-                        title = "Destination"
-                    )
-                }
-
-                pictureLocation?.let { location ->
-                    Marker(
-                        state = MarkerState(position = location),
-                        title = "Picture taken here",
-                        icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN),
-                        onClick = {
-                            showDialog = true
-                            true
-                        }
-                    )
-                }
-            }
-        }
-
-        Column(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .padding(bottom = 8.dp)
-        ) {
-            Button(
-                onClick = {
-                    if (cameraPermissionState.status.isGranted) {
-                        pictureFile = createImageFile()
-                        val photoURI: Uri = FileProvider.getUriForFile(
-                            context,
-                            "com.example.roamright.fileprovider",
-                            pictureFile!!
-                        )
-                        cameraLauncher.launch(photoURI)
-                    } else {
-                        cameraPermissionState.launchPermissionRequest()
+    Scaffold(
+        bottomBar = { BottomNavigationBar(navController = navController) }
+    ) { innerPadding ->
+        Box(modifier = Modifier.padding(innerPadding)) {
+            if (locationPermissionState.status.isGranted) {
+                GoogleMap(
+                    modifier = Modifier.fillMaxSize(),
+                    properties = mapProperties,
+                    cameraPositionState = cameraPositionState,
+                    onMapClick = { latLng ->
+                        clickedLocation = latLng
                     }
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Open Camera")
-            }
-        }
+                ) {
 
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .padding(16.dp)
-        ) {
-            Button(
-                onClick = {
-                    FirebaseAuth.getInstance().signOut()
-                    onLogout()
+                    clickedLocation?.let {
+                        Marker(
+                            state = MarkerState(position = it),
+                            title = "Destination"
+                        )
+                    }
+
+                    pictureLocation?.let { location ->
+                        Marker(
+                            state = MarkerState(position = location),
+                            title = "Picture taken here",
+                            icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN),
+                            onClick = {
+                                showDialog = true
+                                true
+                            }
+                        )
+                    }
                 }
+            }
+
+            Column(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .padding(bottom = 8.dp)
             ) {
-                Text("Logout")
+                Button(
+                    onClick = {
+                        if (cameraPermissionState.status.isGranted) {
+                            pictureFile = createImageFile()
+                            val photoURI: Uri = FileProvider.getUriForFile(
+                                context,
+                                "com.example.roamright.fileprovider",
+                                pictureFile!!
+                            )
+                            cameraLauncher.launch(photoURI)
+                        } else {
+                            cameraPermissionState.launchPermissionRequest()
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Open Camera")
+                }
             }
         }
-    }
 
-    if (showDialog && pictureFile != null) {
-        Dialog(onDismissRequest = { showDialog = false }) {
-            Surface(
-                modifier = Modifier
-                    .padding(16.dp)
-                    .wrapContentSize()
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(text = "Photo taken at the location", style = MaterialTheme.typography.titleLarge)
-                    Spacer(modifier = Modifier.height(16.dp))
-                    val bitmap = BitmapFactory.decodeFile(pictureFile!!.absolutePath)
-                    Image(
-                        bitmap = bitmap.asImageBitmap(),
-                        contentDescription = "Taken Picture",
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(300.dp) // Set the desired height for the image
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Button(onClick = { showDialog = false }) {
-                        Text("Close")
+        if (showDialog && pictureFile != null) {
+            Dialog(onDismissRequest = { showDialog = false }) {
+                Surface(
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .wrapContentSize()
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            text = "Photo taken at the location",
+                            style = MaterialTheme.typography.titleLarge
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        val bitmap = BitmapFactory.decodeFile(pictureFile!!.absolutePath)
+                        Image(
+                            bitmap = bitmap.asImageBitmap(),
+                            contentDescription = "Taken Picture",
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(300.dp) // Set the desired height for the image
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(onClick = { showDialog = false }) {
+                            Text("Close")
+                        }
                     }
                 }
             }

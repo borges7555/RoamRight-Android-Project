@@ -1,5 +1,6 @@
 package com.example.roamright
 
+import ProfilePage
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -8,11 +9,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.example.roamright.ui.theme.RoamRightTheme
 import com.google.firebase.FirebaseApp
-import com.google.firebase.auth.FirebaseAuth
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -32,19 +34,26 @@ fun MainScreen() {
     var username by remember { mutableStateOf("") }
     var showLoginScreen by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf("") }
+    val navController = rememberNavController()
 
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
     ) {
         if (loggedIn) {
-            /*MapPage(username = username, onLogout = {
-                loggedIn = false
-                username = ""
-                showLoginScreen = true
-            })*/
-            //ProfilePage(username = username, photoDetails = )
-            RankingPage(username = username)
+            NavHost(navController = navController, startDestination = "profile") {
+                composable("profile") {
+                    ProfilePage(username = username, onLogout = {
+                        loggedIn = false
+                        username = ""
+                        showLoginScreen = true
+                    }, navController = navController)
+                }
+                composable("map") {
+                    MapPage(username = username, navController = navController)
+                }
+                //composable("analytics") { AnalyticsPage(navController) }
+            }
         } else {
             if (showLoginScreen) {
                 LoginScreen(
